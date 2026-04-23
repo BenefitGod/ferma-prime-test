@@ -1,0 +1,44 @@
+stages:
+  - build
+  - test
+  - docker
+
+variables:
+  GIT_DEPTH: 0
+
+# Этап 1: Сборка
+build:
+  stage: build
+  image: gcc:latest
+  script:
+    - make
+  artifacts:
+    paths:
+      - ferma-test
+    expire_in: 1 hour
+
+# Этап 2: Тестирование
+test:
+  stage: test
+  image: gcc:latest
+  script:
+    - make test
+  dependencies:
+    - build
+
+# Этап 3: Docker сборка и публикация
+docker:
+  stage: docker
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache docker-cli
+  script:
+    - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+    - docker build -t $DOCKER_HUB_USERNAME/ferma-test:$CI_COMMIT_SHORT_SHA .
+    - docker tag $DOCKER_HUB_USERNAME/ferma-test:$CI_COMMIT_SHORT_SHA $DOCKER_HUB_USERNAME/ferma-test:latest
+    - docker push $DOCKER_HUB_USERNAME/ferma-test:$CI_COMMIT_SHORT_SHA
+    - docker push $DOCKER_HUB_USERNAME/ferma-test:latest
+  only:
+    - master
