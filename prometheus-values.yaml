@@ -1,0 +1,8 @@
+server:
+  global:
+    scrape_interval: 15s
+  
+  additionalScrapeConfigs:
+    - job_name: 'ferma-test'
+      static_configs:
+        - targets: ['ferma-test-service:8080']
