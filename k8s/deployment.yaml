@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ferma-test-deployment
+  labels:
+    app: ferma-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ferma-test
+  template:
+    metadata:
+      labels:
+        app: ferma-test
+    spec:
+      containers:
+      - name: ferma-test
+        image: benefitgod/ferma-test:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: metrics
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
