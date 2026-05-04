@@ -1,0 +1,10 @@
+Package: ferma-test
+Version: 0.0.1
+Section: math
+Priority: optional
+Architecture: amd64
+Essential: no
+Depends: gcc, g++, make, libc6-dev
+Maintainer: serenity indeed <voidowich@yandex.ru>
+Description: Ferma prime test
+ test for prime non prime == composite

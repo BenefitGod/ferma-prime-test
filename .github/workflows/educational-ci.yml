@@ -6,7 +6,7 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Ручной запуск
+  workflow_dispatch:
 
 jobs:
   # ========== ЭТАП 1: СБОРКА ==========
@@ -25,7 +25,7 @@ jobs:
       - name: Build program
         run: make
 
-      - name: Upload artifact
+      - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: ferma-test-binary
@@ -47,24 +47,18 @@ jobs:
           name: ferma-test-binary
           path: .
 
-      - name: Make executable
+      - name: Make binary executable
         run: chmod +x ferma-test
 
-      - name: Run unit tests
+      - name: Compile and run unit tests
         run: |
-          echo "=== Запуск тестов ==="
-          # Тест 1: Простое число
-          echo "Тест 1: Число 7 (простое)"
-          ./ferma-test 7 && echo "✓ ТЕСТ ПРОЙДЕН" || echo "✗ ТЕСТ НЕ ПРОЙДЕН"
-          
-          echo ""
-          echo "Тест 2: Число 10 (составное)"
-          ./ferma-test 10 && echo "✗ ТЕСТ НЕ ПРОЙДЕН" || echo "✓ ТЕСТ ПРОЙДЕН"
-          
-          echo ""
-          echo "=== Все тесты завершены ==="
+          mkdir -p test-results
+          cd tests
+          g++ -I../include test_ferma.cpp ../src/ferma.cpp -o test_runner
+          ./test_runner 2>&1 | tee ../test-results/output.txt
+          cd ..
 
-      - name: Save test results
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results
@@ -87,40 +81,32 @@ jobs:
           name: ferma-test-binary
           path: .
 
+      - name: Make binary executable
+        run: chmod +x ferma-test
+
       - name: Install packaging tools
         run: sudo apt-get install -y dpkg-dev
+
+      - name: Copy binary to debian structure
+        run: |
+          # Копируем бинарник в структуру debian
+          cp ferma-test debian/ferma-test/usr/local/bin/
+          chmod 755 debian/ferma-test/usr/local/bin/ferma-test
 
       - name: Build .deb package
         run: |
           VERSION=${GITHUB_REF_NAME:-1.0.0}
           VERSION=${VERSION#v}
           
-          # Создаём структуру пакета
-          mkdir -p debian/ferma-test/usr/local/bin
-          mkdir -p debian/ferma-test/DEBIAN
-          
-          # Копируем бинарник
-          cp ferma-test debian/ferma-test/usr/local/bin/
-          chmod 755 debian/ferma-test/usr/local/bin/ferma-test
-          
-          # Создаём control файл
-          cat > debian/ferma-test/DEBIAN/control << EOF
-          Package: ferma-test
-          Version: ${VERSION}
-          Section: math
-          Priority: optional
-          Architecture: amd64
-          Maintainer: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          Description: Ferma prime test program
-           A program for testing prime numbers using Fermat's theorem.
-           This package was built automatically by GitHub Actions CI/CD.
-          EOF
+          # Обновляем версию в control файле
+          sed -i "s/Version: .*/Version: ${VERSION}/" debian/ferma-test/DEBIAN/control
           
           # Собираем пакет
           dpkg-deb --build debian/ferma-test
           mv debian/ferma-test.deb ferma-test_${VERSION}_amd64.deb
           
-          echo "Пакет создан: ferma-test_${VERSION}_amd64.deb"
+          echo "✅ Пакет создан: ferma-test_${VERSION}_amd64.deb"
+          ls -la *.deb
 
       - name: Upload .deb package
         uses: actions/upload-artifact@v4
