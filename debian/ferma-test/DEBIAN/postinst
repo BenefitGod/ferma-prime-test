@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-
 echo "Ferma Prime Test installed successfully!"
 echo "Run 'ferma-test' to test numbers for primality."
 
