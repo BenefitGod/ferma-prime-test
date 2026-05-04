@@ -89,24 +89,33 @@ jobs:
 
       - name: Copy binary to debian structure
         run: |
-          # Копируем бинарник в структуру debian
+          mkdir -p debian/ferma-test/usr/local/bin
           cp ferma-test debian/ferma-test/usr/local/bin/
           chmod 755 debian/ferma-test/usr/local/bin/ferma-test
 
       - name: Build .deb package
         run: |
-          VERSION=${GITHUB_REF_NAME:-1.0.0}
-          VERSION=${VERSION#v}
+          # ФИКСИРУЕМ ВЕРСИЮ 1.0.0 (НЕ БЕРЁМ ИЗ GITHUB_REF_NAME)
+          VERSION="1.0.0"
           
-          # Обновляем версию в control файле
+          echo "Building version: ${VERSION}"
+          
+          # Обновляем версию
           sed -i "s/Version: .*/Version: ${VERSION}/" debian/ferma-test/DEBIAN/control
+          
+          # Добавляем пустую строку в конец Description
+          echo "" >> debian/ferma-test/DEBIAN/control
+          
+          # Диагностика
+          echo "=== Control file content ==="
+          cat debian/ferma-test/DEBIAN/control
+          echo "============================"
           
           # Собираем пакет
           dpkg-deb --build debian/ferma-test
           mv debian/ferma-test.deb ferma-test_${VERSION}_amd64.deb
           
           echo "✅ Пакет создан: ferma-test_${VERSION}_amd64.deb"
-          ls -la *.deb
 
       - name: Upload .deb package
         uses: actions/upload-artifact@v4
@@ -135,7 +144,8 @@ jobs:
         with:
           files: release/ferma-test_*.deb
           draft: false
-          prerelease: false
+          prerelease:
+            false
           generate_release_notes: true
           name: "Релиз ${{ github.ref_name }}"
           body: |
@@ -144,7 +154,5 @@ jobs:
             ### Что включает этот релиз:
             - ✅ Собранный бинарный файл `ferma-test`
             - 📦 DEB пакет для установки на Ubuntu/Debian
-            
-            ### Установка:
-            ```bash
-            sudo dpkg -i ferma-test_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
