@@ -7,4 +7,4 @@ Essential: no
 Depends: gcc, g++, make, libc6-dev
 Maintainer: serenity indeed <voidowich@yandex.ru>
 Description: Ferma prime test
- test for prime non prime == composite
+ test for prime non prime == composite"" 
