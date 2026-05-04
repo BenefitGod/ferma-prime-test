@@ -93,25 +93,24 @@ jobs:
           cp ferma-test debian/ferma-test/usr/local/bin/
           chmod 755 debian/ferma-test/usr/local/bin/ferma-test
 
+      - name: Fix postinst permissions
+        run: chmod 755 debian/ferma-test/DEBIAN/postinst
+
       - name: Build .deb package
         run: |
-          # ФИКСИРУЕМ ВЕРСИЮ 1.0.0 (НЕ БЕРЁМ ИЗ GITHUB_REF_NAME)
           VERSION="1.0.0"
           
           echo "Building version: ${VERSION}"
           
-          # Обновляем версию
           sed -i "s/Version: .*/Version: ${VERSION}/" debian/ferma-test/DEBIAN/control
-          
-          # Добавляем пустую строку в конец Description
           echo "" >> debian/ferma-test/DEBIAN/control
           
-          # Диагностика
           echo "=== Control file content ==="
           cat debian/ferma-test/DEBIAN/control
+          echo "=== postinst permissions ==="
+          ls -la debian/ferma-test/DEBIAN/postinst
           echo "============================"
           
-          # Собираем пакет
           dpkg-deb --build debian/ferma-test
           mv debian/ferma-test.deb ferma-test_${VERSION}_amd64.deb
           
@@ -144,8 +143,7 @@ jobs:
         with:
           files: release/ferma-test_*.deb
           draft: false
-          prerelease:
-            false
+          prerelease: false
           generate_release_notes: true
           name: "Релиз ${{ github.ref_name }}"
           body: |
