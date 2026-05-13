@@ -1,0 +1,1 @@
+make -f Makefile.deb deb && sudo dpkg --purge ferma-test && sudo dpkg -i ferma-test_1.0.0_amd64.deb

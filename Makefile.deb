@@ -1,0 +1,50 @@
+# Makefile для сборки deb-пакета
+PACKAGE_NAME = ferma-test
+VERSION = 1.0.0
+DEB_DIR = debian/$(PACKAGE_NAME)
+
+all: build
+
+# Сборка программы
+build:
+	make clean
+	make
+
+# Установка в структуру deb-пакета
+install: build
+	mkdir -p $(DEB_DIR)/usr/local/bin
+	mkdir -p $(DEB_DIR)/usr/share/doc/$(PACKAGE_NAME)
+	cp ferma-test $(DEB_DIR)/usr/local/bin/
+	cp README.md $(DEB_DIR)/usr/share/doc/$(PACKAGE_NAME)/
+	cp LICENSE $(DEB_DIR)/usr/share/doc/$(PACKAGE_NAME)/copyright
+	chmod 755 $(DEB_DIR)/usr/local/bin/ferma-test
+
+# Проверка зависимостей
+check-deps:
+	@echo "Checking build dependencies..."
+	@command -v g++ >/dev/null 2>&1 || { echo "g++ is required but not installed. Aborting." >&2; exit 1; }
+	@command -v make >/dev/null 2>&1 || { echo "make is required but not installed. Aborting." >&2; exit 1; }
+	@echo "All dependencies satisfied."
+
+# Сборка deb-пакета
+deb: check-deps clean build install
+	dpkg-deb --build $(DEB_DIR)
+	mv debian/$(PACKAGE_NAME).deb $(PACKAGE_NAME)_$(VERSION)_amd64.deb
+	@echo "Deb package created: $(PACKAGE_NAME)_$(VERSION)_amd64.deb"
+
+# Установка пакета
+install-deb: deb
+	sudo dpkg -i $(PACKAGE_NAME)_$(VERSION)_amd64.deb
+	sudo apt-get install -f  # Fix dependencies if needed
+
+# Удаление пакета
+remove-deb:
+	sudo dpkg --remove $(PACKAGE_NAME)
+
+# Очистка
+clean:
+	make clean
+	rm -rf $(DEB_DIR)/usr
+	rm -f $(PACKAGE_NAME)_*.deb
+
+.PHONY: all build install check-deps deb install-deb remove-deb clean
